@@ -7,5 +7,5 @@ Interfaz moderna, responsive y lista para publicarse en **GitHub Pages** o **Ver
 
 1. Clona el repo:
    ```bash
-   git clone https://github.com/<tu-usuario>/hangman.git
-   cd hangman
+   git clone https://github.com/PierSoco/Hangman/
+   https://zatmeni.ar/hangman
