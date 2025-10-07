@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Ahorcado / Hangman</title>
+  <meta name="description" content="Juego clásico del Ahorcado en HTML, CSS y JavaScript puros." />
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <main class="app wrap">
+    <!-- Pantalla de menú -->
+    <section id="screen-menu" class="screen active" aria-labelledby="title">
+      <h1 id="title" class="title">Ahorcado / Hangman</h1>
+      <div class="btn-group">
+        <button id="btn-random" class="btn primary">Jugar con palabras aleatorias</button>
+        <button id="btn-friends" class="btn">Jugar con un amigo</button>
+        <button class="btn outline" disabled title="Próximamente">Jugar online (próximamente)</button>
+      </div>
+      <p class="hint">Hecho con HTML, CSS y JS puros. Responsive y listo para GitHub Pages / Vercel.</p>
+    </section>
+
+    <!-- Pantalla ingresar palabra (amigo) -->
+    <section id="screen-setup" class="screen" aria-labelledby="setup-title">
+      <h2 id="setup-title" class="subtitle">Ingresá una palabra para tu amigo</h2>
+      <form id="setup-form" class="setup-form" autocomplete="off">
+        <label for="secret-word" class="sr-only">Palabra secreta (solo letras, sin tildes)</label>
+        <!-- type="password" para ocultar la palabra al segundo jugador -->
+        <input id="secret-word" class="input" type="password" placeholder="Palabra (solo letras)" minlength="2" required />
+        <div class="row gap">
+          <label class="checkbox">
+            <input id="toggle-visibility" type="checkbox" />
+            <span>Mostrar palabra</span>
+          </label>
+        </div>
+        <div class="btn-group">
+          <button class="btn primary" type="submit">Comenzar</button>
+          <button id="btn-setup-back" class="btn" type="button">Volver</button>
+        </div>
+        <p id="setup-error" class="error" role="alert" aria-live="polite"></p>
+      </form>
+    </section>
+
+    <!-- Pantalla de juego -->
+    <section id="screen-game" class="screen" aria-live="polite">
+      <div class="topbar">
+        <button id="btn-back-menu" class="btn small">← Menú</button>
+        <div class="status">
+          <span>Errores: <strong id="mistakes">0</strong>/<span id="max-mistakes">6</span></span>
+        </div>
+      </div>
+
+      <div class="game-grid">
+        <div class="gallows">
+          <!-- Dibujo del ahorcado con SVG. Partes se van mostrando con errores. -->
+          <svg viewBox="0 0 200 220" class="hangman" role="img" aria-label="Dibujo del ahorcado">
+            <!-- Base -->
+            <line x1="10" y1="210" x2="190" y2="210" class="base"/>
+            <line x1="40" y1="210" x2="40" y2="20" class="post"/>
+            <line x1="37" y1="20" x2="130" y2="20" class="beam"/>
+            <line x1="130" y1="20" x2="130" y2="45" class="rope"/>
+
+            <!-- Partes del cuerpo (se muestran progresivamente) -->
+            <circle cx="130" cy="65" r="20" class="part part-1" />
+            <line x1="130" y1="85" x2="130" y2="135" class="part part-2" />
+            <line x1="130" y1="95" x2="105" y2="120" class="part part-3" />
+            <line x1="130" y1="95" x2="155" y2="120" class="part part-4" />
+            <line x1="130" y1="135" x2="110" y2="170" class="part part-5" />
+            <line x1="130" y1="135" x2="150" y2="170" class="part part-6" />
+          </svg>
+        </div>
+
+        <div class="board">
+          <div id="word" class="word" aria-label="Letras de la palabra"></div>
+          <div id="used-letters" class="used" aria-live="polite"></div>
+          <div class="keyboard" aria-label="Teclado en pantalla">
+            <!-- Teclado generado por JS -->
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Modal de resultado -->
+    <dialog id="result-modal" class="modal" aria-labelledby="result-title" aria-live="polite">
+      <h2 id="result-title" class="result-title"></h2>
+      <p id="result-message" class="result-msg"></p>
+      <div class="btn-group">
+        <button id="btn-play-again" class="btn primary">Jugar de nuevo</button>
+        <button id="btn-go-menu" class="btn">Volver al menú</button>
+      </div>
+    </dialog>
+  </main>
+
+  <script src="script.js"></script>
+</body>
+</html>
