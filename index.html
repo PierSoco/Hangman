@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Ahorcado / Hangman</title>
-  <meta name="description" content="Juego clásico del Ahorcado en HTML, CSS y JavaScript puros." />
+  <meta name="description" content="Juego del Ahorcado con pistas, estrellas y puntaje." />
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
@@ -17,7 +17,7 @@
         <button id="btn-friends" class="btn">Jugar con un amigo</button>
         <button class="btn outline" disabled title="Próximamente">Jugar online (próximamente)</button>
       </div>
-      <p class="hint">Hecho con HTML, CSS y JS puros. Responsive y listo para GitHub Pages / Vercel.</p>
+      <p class="hint">HTML, CSS y JS puros. Funciona en GitHub Pages / Vercel.</p>
     </section>
 
     <!-- Pantalla ingresar palabra (amigo) -->
@@ -25,7 +25,6 @@
       <h2 id="setup-title" class="subtitle">Ingresá una palabra para tu amigo</h2>
       <form id="setup-form" class="setup-form" autocomplete="off">
         <label for="secret-word" class="sr-only">Palabra secreta (solo letras, sin tildes)</label>
-        <!-- type="password" para ocultar la palabra al segundo jugador -->
         <input id="secret-word" class="input" type="password" placeholder="Palabra (solo letras)" minlength="2" required />
         <div class="row gap">
           <label class="checkbox">
@@ -43,24 +42,42 @@
 
     <!-- Pantalla de juego -->
     <section id="screen-game" class="screen" aria-live="polite">
+      <!-- Confetti -->
+      <canvas id="confetti" class="confetti" aria-hidden="true"></canvas>
+
       <div class="topbar">
         <button id="btn-back-menu" class="btn small">← Menú</button>
+
         <div class="status">
           <span>Errores: <strong id="mistakes">0</strong>/<span id="max-mistakes">6</span></span>
+        </div>
+
+        <!-- Pistas -->
+        <div id="hints-area" class="hints-area" aria-label="Pistas">
+          <button id="btn-hint" class="icon-btn" title="Pedir pista" aria-label="Pedir pista">
+            <svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true">
+              <path d="M9 21h6M10 17h4M8 13a4 4 0 118 0c0 2-2 3-2 3h-4s-2-1-2-3zM12 3a6 6 0 00-6 6c0 2.22 1.22 4.15 3 5.19" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+            <span id="hint-count" class="hint-count">0/3</span>
+          </button>
+          <div id="hint-chips" class="hint-chips" aria-live="polite"></div>
+        </div>
+
+        <!-- Puntos / Racha -->
+        <div class="scorebox" aria-label="Puntaje y racha">
+          <span>⭐ Puntos: <strong id="score">0</strong></span>
+          <span class="sep">|</span>
+          <span>🔥 Racha: <strong id="streak">0</strong></span>
         </div>
       </div>
 
       <div class="game-grid">
         <div class="gallows">
-          <!-- Dibujo del ahorcado con SVG. Partes se van mostrando con errores. -->
           <svg viewBox="0 0 200 220" class="hangman" role="img" aria-label="Dibujo del ahorcado">
-            <!-- Base -->
             <line x1="10" y1="210" x2="190" y2="210" class="base"/>
             <line x1="40" y1="210" x2="40" y2="20" class="post"/>
             <line x1="37" y1="20" x2="130" y2="20" class="beam"/>
             <line x1="130" y1="20" x2="130" y2="45" class="rope"/>
-
-            <!-- Partes del cuerpo (se muestran progresivamente) -->
             <circle cx="130" cy="65" r="20" class="part part-1" />
             <line x1="130" y1="85" x2="130" y2="135" class="part part-2" />
             <line x1="130" y1="95" x2="105" y2="120" class="part part-3" />
@@ -73,17 +90,29 @@
         <div class="board">
           <div id="word" class="word" aria-label="Letras de la palabra"></div>
           <div id="used-letters" class="used" aria-live="polite"></div>
-          <div class="keyboard" aria-label="Teclado en pantalla">
-            <!-- Teclado generado por JS -->
-          </div>
+
+          <!-- Teclado QWERTY generado por JS -->
+          <div class="keyboard" aria-label="Teclado en pantalla"></div>
         </div>
       </div>
     </section>
 
+    <!-- Modal de pista -->
+    <dialog id="hint-modal" class="modal" aria-labelledby="hint-title" aria-live="polite">
+      <h2 id="hint-title" class="result-title">Pista</h2>
+      <p id="hint-text" class="result-msg"></p>
+      <div class="btn-group">
+        <button id="btn-close-hint" class="btn primary" type="button">Cerrar</button>
+      </div>
+    </dialog>
+
     <!-- Modal de resultado -->
     <dialog id="result-modal" class="modal" aria-labelledby="result-title" aria-live="polite">
       <h2 id="result-title" class="result-title"></h2>
+      <div id="stars" class="stars" aria-label="Puntuación con estrellas" role="img"></div>
+      <p id="result-extra" class="result-sub"></p>
       <p id="result-message" class="result-msg"></p>
+      <div id="result-points" class="result-points"></div>
       <div class="btn-group">
         <button id="btn-play-again" class="btn primary">Jugar de nuevo</button>
         <button id="btn-go-menu" class="btn">Volver al menú</button>
