@@ -13,6 +13,18 @@
     <a href="about.html">Historia</a>
   </nav>
   <main class="app wrap">
+    <!-- Navegación principal -->
+    <nav class="main-nav" id="main-nav">
+      <div class="nav-brand">
+        <h1>🎯 Hangman</h1>
+      </div>
+      <div class="nav-links">
+        <button class="nav-link" data-screen="menu">🏠 Inicio</button>
+        <button class="nav-link" data-screen="history">📚 Historia</button>
+        <button class="nav-link" data-screen="settings">⚙️ Configuración</button>
+      </div>
+    </nav>
+    
     <!-- Pantalla de menú -->
     <section id="screen-menu" class="screen active" aria-labelledby="title">
       <h1 id="title" class="title">Ahorcado / Hangman</h1>
@@ -20,6 +32,40 @@
         <button id="btn-random" class="btn primary">Jugar con palabras aleatorias</button>
         <button id="btn-friends" class="btn">Jugar con un amigo</button>
         <button class="btn outline" disabled title="Próximamente">Jugar online (próximamente)</button>
+      </div>
+      
+      <!-- Selector de dificultad -->
+      <div class="difficulty-selector">
+        <h3>Selecciona la dificultad:</h3>
+        <div class="difficulty-options">
+          <label class="difficulty-option">
+            <input type="radio" name="difficulty" value="easy" checked>
+            <div class="difficulty-card">
+              <h4>Fácil</h4>
+              <p>Palabras cortas (3-5 letras)</p>
+              <p>8 errores permitidos</p>
+              <p>Pistas más descriptivas</p>
+            </div>
+          </label>
+          <label class="difficulty-option">
+            <input type="radio" name="difficulty" value="medium">
+            <div class="difficulty-card">
+              <h4>Medio</h4>
+              <p>Palabras medianas (6-8 letras)</p>
+              <p>6 errores permitidos</p>
+              <p>Pistas moderadas</p>
+            </div>
+          </label>
+          <label class="difficulty-option">
+            <input type="radio" name="difficulty" value="hard">
+            <div class="difficulty-card">
+              <h4>Difícil</h4>
+              <p>Palabras largas (9+ letras)</p>
+              <p>4 errores permitidos</p>
+              <p>Pistas vagas</p>
+            </div>
+          </label>
+        </div>
       </div>
       <p class="hint">HTML, CSS y JS puros. Funciona en GitHub Pages / Vercel.</p>
     </section>
@@ -58,11 +104,12 @@
 
         <!-- Pistas -->
         <div id="hints-area" class="hints-area" aria-label="Pistas">
-          <button id="btn-hint" class="icon-btn" title="Pedir pista" aria-label="Pedir pista">
+          <button id="btn-hint" class="icon-btn" title="Comprar pista (cuesta 15 puntos)" aria-label="Comprar pista">
             <svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true">
               <path d="M9 21h6M10 17h4M8 13a4 4 0 118 0c0 2-2 3-2 3h-4s-2-1-2-3zM12 3a6 6 0 00-6 6c0 2.22 1.22 4.15 3 5.19" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
             </svg>
             <span id="hint-count" class="hint-count">0/3</span>
+            <span id="hint-cost" class="hint-cost">15⭐</span>
           </button>
           <div id="hint-chips" class="hint-chips" aria-live="polite"></div>
         </div>
@@ -119,9 +166,106 @@
       <div id="result-points" class="result-points"></div>
       <div class="btn-group">
         <button id="btn-play-again" class="btn primary">Jugar de nuevo</button>
+        <button id="btn-share-whatsapp" class="btn secondary">Compartir por WhatsApp</button>
         <button id="btn-go-menu" class="btn">Volver al menú</button>
       </div>
     </dialog>
+
+    <!-- Pantalla de Historia -->
+    <section id="screen-history" class="screen" aria-labelledby="history-title">
+      <h2 id="history-title" class="subtitle">📚 Historia del Juego del Ahorcado</h2>
+      <div class="history-content">
+        <div class="history-section">
+          <h3>🎯 Origen</h3>
+          <p>El juego del ahorcado tiene sus raíces en el siglo XIX, aunque su origen exacto es incierto. Se cree que surgió como una forma de entretenimiento educativo para enseñar vocabulario y ortografía.</p>
+        </div>
+        
+        <div class="history-section">
+          <h3>🌍 Popularidad Mundial</h3>
+          <p>Conocido en inglés como "Hangman", este juego se popularizó en todo el mundo debido a su simplicidad y su capacidad para ser jugado sin necesidad de materiales especiales.</p>
+        </div>
+        
+        <div class="history-section">
+          <h3>🎓 Valor Educativo</h3>
+          <p>El juego del ahorcado es ampliamente utilizado en educación para:</p>
+          <ul>
+            <li>Mejorar el vocabulario</li>
+            <li>Practicar la ortografía</li>
+            <li>Desarrollar habilidades de deducción</li>
+            <li>Fomentar el pensamiento estratégico</li>
+          </ul>
+        </div>
+        
+        <div class="history-section">
+          <h3>🎮 Versión Digital</h3>
+          <p>Esta versión moderna incluye características innovadoras como:</p>
+          <ul>
+            <li>Sistema de puntuación con estrellas</li>
+            <li>Pistas comprables con puntos</li>
+            <li>Niveles de dificultad</li>
+            <li>Compartir resultados por WhatsApp</li>
+          </ul>
+        </div>
+      </div>
+      <div class="btn-group">
+        <button class="btn primary" onclick="showScreen('menu')">Volver al Inicio</button>
+      </div>
+    </section>
+
+    <!-- Pantalla de Configuración -->
+    <section id="screen-settings" class="screen" aria-labelledby="settings-title">
+      <h2 id="settings-title" class="subtitle">⚙️ Configuración</h2>
+      <div class="settings-content">
+        <div class="setting-group">
+          <h3>🎨 Tema</h3>
+          <div class="theme-selector">
+            <label class="theme-option">
+              <input type="radio" name="theme" value="light" checked>
+              <span class="theme-card">
+                <span class="theme-icon">☀️</span>
+                <span class="theme-name">Claro</span>
+              </span>
+            </label>
+            <label class="theme-option">
+              <input type="radio" name="theme" value="dark">
+              <span class="theme-card">
+                <span class="theme-icon">🌙</span>
+                <span class="theme-name">Oscuro</span>
+              </span>
+            </label>
+          </div>
+        </div>
+        
+        <div class="setting-group">
+          <h3>🎵 Sonidos</h3>
+          <label class="checkbox">
+            <input type="checkbox" id="sound-enabled" checked>
+            <span>Habilitar efectos de sonido</span>
+          </label>
+        </div>
+        
+        <div class="setting-group">
+          <h3>📊 Estadísticas</h3>
+          <div class="stats-display">
+            <div class="stat-item">
+              <span class="stat-label">Puntos totales:</span>
+              <span class="stat-value" id="total-points">0</span>
+            </div>
+            <div class="stat-item">
+              <span class="stat-label">Racha actual:</span>
+              <span class="stat-value" id="current-streak">0</span>
+            </div>
+            <div class="stat-item">
+              <span class="stat-label">Partidas jugadas:</span>
+              <span class="stat-value" id="games-played">0</span>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="btn-group">
+        <button class="btn primary" onclick="showScreen('menu')">Volver al Inicio</button>
+      </div>
+    </section>
   </main>
 
   <script src="script.js"></script>

@@ -29,6 +29,24 @@
     { "word": "FUEGO", "hints": ["Calor y luz", "Combustión", "Se apaga con agua"] },
     { "word": "TIEMPO", "hints": ["Magnitud", "Pasa para todos", "Se mide en horas"] },
     { "word": "FIESTA", "hints": ["Reunión", "Música y baile", "Para celebrar"] },
-    { "word": "PAN", "hints": ["Comida", "Harina y agua", "Se hornea"] }
+    { "word": "PAN", "hints": ["Comida", "Harina y agua", "Se hornea"] },
+    { "word": "GOL", "hints": ["En el fútbol", "Se marca en la portería", "Punto en el juego"] },
+    { "word": "PELO", "hints": ["En la cabeza", "Se puede peinar", "Cubre el cuero cabelludo"] },
+    { "word": "AGUA", "hints": ["Líquido vital", "Incoloro", "Se bebe"] },
+    { "word": "LECHE", "hints": ["Bebida blanca", "De la vaca", "Para los huesos"] },
+    { "word": "MANZANA", "hints": ["Fruta roja o verde", "Crece en árboles", "Dulce y jugosa"] },
+    { "word": "TELEFONO", "hints": ["Para llamar", "Tiene números", "Se puede móvil"] },
+    { "word": "COMPUTADORA", "hints": ["Para trabajar", "Tiene pantalla", "Procesa datos"] },
+    { "word": "RESTAURANTE", "hints": ["Para comer", "Sirve comida", "Tiene mesas"] },
+    { "word": "UNIVERSIDAD", "hints": ["Para estudiar", "Educación superior", "Tiene profesores"] },
+    { "word": "HOSPITAL", "hints": ["Para enfermos", "Tiene médicos", "Se cura aquí"] },
+    { "word": "BICICLETA", "hints": ["Transporte", "Tiene pedales", "Dos ruedas"] },
+    { "word": "PELICULA", "hints": ["Entretenimiento", "Se ve en cine", "Actores y actrices"] },
+    { "word": "MUSICA", "hints": ["Arte sonoro", "Se escucha", "Tiene melodía"] },
+    { "word": "DEPORTE", "hints": ["Actividad física", "Se practica", "Competición"] },
+    { "word": "VACACIONES", "hints": ["Tiempo libre", "Para descansar", "Fuera del trabajo"] },
+    { "word": "NATURALEZA", "hints": ["Ambiente natural", "Plantas y animales", "Sin contaminar"] },
+    { "word": "TECNOLOGIA", "hints": ["Avances científicos", "Innovación", "Dispositivos modernos"] },
+    { "word": "EDUCACION", "hints": ["Proceso de aprendizaje", "En escuelas", "Desarrollo personal"] }
   ]
 }
