@@ -1,6 +1,29 @@
 /* ========= Constantes y estado ========= */
 const MAX_MISTAKES = 6;
 const MAX_HINTS = 3;
+const HINT_COST = 15; // Costo en puntos para comprar una pista
+
+// Configuraciones de dificultad
+const DIFFICULTY_CONFIG = {
+  easy: {
+    maxMistakes: 8,
+    minLength: 3,
+    maxLength: 5,
+    name: "Fácil"
+  },
+  medium: {
+    maxMistakes: 6,
+    minLength: 6,
+    maxLength: 8,
+    name: "Medio"
+  },
+  hard: {
+    maxMistakes: 4,
+    minLength: 9,
+    maxLength: 20,
+    name: "Difícil"
+  }
+};
 
 // Teclado QWERTY (sin Ñ porque normalizamos a A-Z)
 const KEYBOARD_LAYOUT = [
@@ -18,6 +41,8 @@ const LS_KEYS = {
 
 let WORDS_DB = []; // [{word:"...", hints:["...","...","..."]}]
 
+let currentDifficulty = "easy"; // Dificultad actual
+
 let gameState = {
   secret: "",
   revealed: [],
@@ -27,7 +52,8 @@ let gameState = {
   hints: [],
   usedHintsIdx: [],
   nextHintIdx: 0,
-  over: false
+  over: false,
+  difficulty: "easy"
 };
 
 /* ========= DOM ========= */
@@ -35,11 +61,24 @@ const screens = {
   menu: document.getElementById("screen-menu"),
   setup: document.getElementById("screen-setup"),
   game: document.getElementById("screen-game"),
+  history: document.getElementById("screen-history"),
+  settings: document.getElementById("screen-settings"),
 };
 
 const btnRandom = document.getElementById("btn-random");
 const btnFriends = document.getElementById("btn-friends");
 const btnBackMenu = document.getElementById("btn-back-menu");
+
+// Selector de dificultad
+const difficultyInputs = document.querySelectorAll('input[name="difficulty"]');
+
+// Navegación
+const navLinks = document.querySelectorAll('.nav-link');
+const themeInputs = document.querySelectorAll('input[name="theme"]');
+const soundEnabled = document.getElementById('sound-enabled');
+const totalPointsEl = document.getElementById('total-points');
+const currentStreakEl = document.getElementById('current-streak');
+const gamesPlayedEl = document.getElementById('games-played');
 
 const setupForm = document.getElementById("setup-form");
 const inputSecret = document.getElementById("secret-word");
@@ -54,6 +93,7 @@ const keyboardEl = document.querySelector(".keyboard");
 const hintsArea = document.getElementById("hints-area");
 const btnHint = document.getElementById("btn-hint");
 const hintCountEl = document.getElementById("hint-count");
+const hintCostEl = document.getElementById("hint-cost");
 const hintChipsEl = document.getElementById("hint-chips");
 
 const mistakesEl = document.getElementById("mistakes");
@@ -70,6 +110,7 @@ const resultExtra = document.getElementById("result-extra");
 const resultPoints = document.getElementById("result-points");
 const starsEl = document.getElementById("stars");
 const btnPlayAgain = document.getElementById("btn-play-again");
+const btnShareWhatsapp = document.getElementById("btn-share-whatsapp");
 const btnGoMenu = document.getElementById("btn-go-menu");
 
 const parts = [...document.querySelectorAll(".part")];
@@ -108,6 +149,14 @@ async function loadWordsJSON(){
   }
 }
 
+function getWordsByDifficulty(difficulty) {
+  const config = DIFFICULTY_CONFIG[difficulty];
+  return WORDS_DB.filter(word => 
+    word.word.length >= config.minLength && 
+    word.word.length <= config.maxLength
+  );
+}
+
 function lsGet(key, def=0){
   const v = localStorage.getItem(key);
   const n = Number(v);
@@ -124,6 +173,25 @@ function refreshScoreUI(){
 function showScreen(name){
   Object.values(screens).forEach(s => s.classList.remove("active","state-win","state-lose"));
   screens[name].classList.add("active");
+  
+  // Actualizar navegación activa
+  navLinks.forEach(link => {
+    link.classList.remove('active');
+    if (link.dataset.screen === name) {
+      link.classList.add('active');
+    }
+  });
+  
+  // Actualizar estadísticas si estamos en configuración
+  if (name === 'settings') {
+    updateStatsDisplay();
+  }
+}
+
+function updateStatsDisplay() {
+  if (totalPointsEl) totalPointsEl.textContent = lsGet(LS_KEYS.SCORE, 0);
+  if (currentStreakEl) currentStreakEl.textContent = lsGet(LS_KEYS.STREAK, 0);
+  if (gamesPlayedEl) gamesPlayedEl.textContent = lsGet('ahorcado_games_played', 0);
 }
 
 function renderKeyboard(){
@@ -147,13 +215,23 @@ function renderKeyboard(){
 
 function renderHintUI(){
   hintCountEl.textContent = `${gameState.usedHintsIdx.length}/${Math.min(MAX_HINTS, gameState.hints.length)}`;
-
+  
+  // Verificar si hay suficientes puntos para comprar una pista
+  const currentScore = lsGet(LS_KEYS.SCORE, 0);
+  const hasEnoughPoints = currentScore >= HINT_COST;
+  
   const canGiveMore = gameState.mode === "random"
     && gameState.nextHintIdx < Math.min(MAX_HINTS, gameState.hints.length)
-    && !gameState.over;
+    && !gameState.over
+    && hasEnoughPoints;
 
   btnHint.disabled = !canGiveMore;
   btnHint.classList.toggle("disabled", btnHint.disabled);
+  
+  // Actualizar el estilo del costo según si hay suficientes puntos
+  if (hintCostEl) {
+    hintCostEl.style.color = hasEnoughPoints ? "var(--gold)" : "var(--danger)";
+  }
 
   hintChipsEl.innerHTML = "";
   gameState.usedHintsIdx.forEach((idx, i) => {
@@ -186,7 +264,8 @@ function renderState(){
 
   // errores
   mistakesEl.textContent = String(gameState.mistakes);
-  maxMistakesEl.textContent = String(MAX_MISTAKES);
+  const config = DIFFICULTY_CONFIG[gameState.difficulty];
+  maxMistakesEl.textContent = String(config.maxMistakes);
 
   // partes visibles
   parts.forEach((p, idx) => p.classList.toggle("visible", idx < gameState.mistakes));
@@ -201,7 +280,7 @@ function renderState(){
   renderHintUI();
 }
 
-function startGameWith(word, mode="random", hints=[]){
+function startGameWith(word, mode="random", hints=[], difficulty="easy"){
   const secret = normalizeLetters(word);
   if(!secret || secret.length < 2) throw new Error("La palabra debe tener al menos 2 letras.");
 
@@ -217,7 +296,8 @@ function startGameWith(word, mode="random", hints=[]){
     hints: (Array.isArray(hints) ? hints : (hints ? [hints] : [])).slice(0, MAX_HINTS),
     usedHintsIdx: [],
     nextHintIdx: 0,
-    over: false
+    over: false,
+    difficulty
   };
   renderKeyboard();
   renderState();
@@ -225,7 +305,10 @@ function startGameWith(word, mode="random", hints=[]){
 }
 
 function hasWon(){ return gameState.revealed.join("") === gameState.secret; }
-function hasLost(){ return gameState.mistakes >= MAX_MISTAKES; }
+function hasLost(){ 
+  const config = DIFFICULTY_CONFIG[gameState.difficulty];
+  return gameState.mistakes >= config.maxMistakes; 
+}
 
 function handleGuess(rawLetter){
   if(gameState.over) return;
@@ -259,9 +342,32 @@ function giveNextHint(){
   const maxAvail = Math.min(MAX_HINTS, gameState.hints.length);
   if(gameState.nextHintIdx >= maxAvail || gameState.over) return;
 
+  // Verificar si hay suficientes puntos
+  const currentScore = lsGet(LS_KEYS.SCORE, 0);
+  if(currentScore < HINT_COST) {
+    // Agregar animación de shake al botón
+    btnHint.classList.add("insufficient-points");
+    setTimeout(() => {
+      btnHint.classList.remove("insufficient-points");
+    }, 500);
+    
+    // Mostrar mensaje de que no hay suficientes puntos
+    hintText.textContent = `No tienes suficientes puntos para comprar una pista. Necesitas ${HINT_COST} puntos y tienes ${currentScore}.`;
+    hintModal.showModal();
+    return;
+  }
+
   const idx = gameState.nextHintIdx;
   const text = gameState.hints[idx] || "Sin pista disponible.";
-  openHintModal(text);
+  
+  // Restar puntos por la pista
+  const newScore = currentScore - HINT_COST;
+  lsSet(LS_KEYS.SCORE, newScore);
+  refreshScoreUI();
+  
+  // Mostrar la pista con mensaje de costo
+  const hintWithCost = `${text}\n\n💡 Gastaste ${HINT_COST} puntos por esta pista.`;
+  openHintModal(hintWithCost);
 
   gameState.usedHintsIdx.push(idx);
   gameState.nextHintIdx++;
@@ -351,6 +457,28 @@ function showConfetti(ms=1200){
   requestAnimationFrame(tick);
 }
 
+function shareToWhatsApp(win, stars, scoreGain, streak, revealWord) {
+  const config = DIFFICULTY_CONFIG[gameState.difficulty];
+  const emoji = win ? "🎉" : "😵";
+  const status = win ? "¡Gané!" : "Perdí";
+  
+  let message = `${emoji} ${status} jugando Ahorcado!\n\n`;
+  message += `📝 Palabra: ${revealWord}\n`;
+  message += `🎯 Dificultad: ${config.name}\n`;
+  message += `💡 Pistas usadas: ${gameState.usedHintsIdx.length}\n`;
+  
+  if (win) {
+    message += `⭐ Estrellas: ${stars}/3\n`;
+    message += `🏆 Puntos ganados: +${scoreGain}\n`;
+    message += `🔥 Racha actual: ${streak}\n`;
+  }
+  
+  message += `\n🎮 ¡Juega también en: ${window.location.href}`;
+  
+  const whatsappUrl = `https://wa.me/?text=${encodeURIComponent(message)}`;
+  window.open(whatsappUrl, '_blank');
+}
+
 function showResult(win){
   endGameLock();
 
@@ -377,14 +505,30 @@ function showResult(win){
     renderStars(0);
   }
 
+  // Configurar el botón de WhatsApp
+  btnShareWhatsapp.onclick = () => shareToWhatsApp(win, stars, scoreGain, streak, revealWord);
+
   modal.showModal();
 }
 
 /* ========= Navegación / eventos ========= */
 btnRandom.addEventListener("click", async () => {
   await loadWordsJSON();
-  const pick = WORDS_DB[Math.floor(Math.random() * WORDS_DB.length)];
-  startGameWith(pick.word, "random", pick.hints);
+  
+  // Obtener la dificultad seleccionada
+  const selectedDifficulty = document.querySelector('input[name="difficulty"]:checked').value;
+  currentDifficulty = selectedDifficulty;
+  
+  // Filtrar palabras por dificultad
+  const wordsForDifficulty = getWordsByDifficulty(selectedDifficulty);
+  
+  if (wordsForDifficulty.length === 0) {
+    alert(`No hay palabras disponibles para la dificultad ${DIFFICULTY_CONFIG[selectedDifficulty].name}.`);
+    return;
+  }
+  
+  const pick = wordsForDifficulty[Math.floor(Math.random() * wordsForDifficulty.length)];
+  startGameWith(pick.word, "random", pick.hints, selectedDifficulty);
 });
 
 btnFriends.addEventListener("click", () => {
@@ -448,5 +592,36 @@ window.addEventListener("keydown", (e) => {
 });
 
 /* Inicialización */
+// Dar puntos iniciales a jugadores nuevos para que puedan probar las pistas
+const initialScore = lsGet(LS_KEYS.SCORE, 0);
+if (initialScore === 0) {
+  lsSet(LS_KEYS.SCORE, 50); // 50 puntos iniciales (suficiente para 3 pistas)
+}
+
+// Event listeners para navegación
+navLinks.forEach(link => {
+  link.addEventListener('click', () => {
+    const screenName = link.dataset.screen;
+    if (screenName && screens[screenName]) {
+      showScreen(screenName);
+    }
+  });
+});
+
+// Event listeners para configuración de tema
+themeInputs.forEach(input => {
+  input.addEventListener('change', (e) => {
+    const theme = e.target.value;
+    document.body.className = theme === 'dark' ? 'dark-theme' : '';
+    lsSet('ahorcado_theme', theme);
+  });
+});
+
+// Cargar tema guardado
+const savedTheme = localStorage.getItem('ahorcado_theme') || 'light';
+document.body.className = savedTheme === 'dark' ? 'dark-theme' : '';
+const savedThemeInput = document.querySelector(`input[name="theme"][value="${savedTheme}"]`);
+if (savedThemeInput) savedThemeInput.checked = true;
+
 refreshScoreUI();
 renderKeyboard();
