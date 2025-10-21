@@ -8,10 +8,11 @@
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
-    <!-- Menú de navegación -->
+  <!-- Menú de navegación superior simple -->
   <nav class="navbar" aria-label="Menú principal">
-    <a href="about.html">Historia</a>
+    <a href="#" data-screen="history">Historia</a>
   </nav>
+
   <main class="app wrap">
     <!-- Navegación principal -->
     <nav class="main-nav" id="main-nav">
@@ -19,12 +20,12 @@
         <h1>🎯 Hangman</h1>
       </div>
       <div class="nav-links">
-        <button class="nav-link" data-screen="menu">🏠 Inicio</button>
+        <button class="nav-link active" data-screen="menu">🏠 Inicio</button>
         <button class="nav-link" data-screen="history">📚 Historia</button>
         <button class="nav-link" data-screen="settings">⚙️ Configuración</button>
       </div>
     </nav>
-    
+
     <!-- Pantalla de menú -->
     <section id="screen-menu" class="screen active" aria-labelledby="title">
       <h1 id="title" class="title">Ahorcado / Hangman</h1>
@@ -33,7 +34,7 @@
         <button id="btn-friends" class="btn">Jugar con un amigo</button>
         <button class="btn outline" disabled title="Próximamente">Jugar online (próximamente)</button>
       </div>
-      
+
       <!-- Selector de dificultad -->
       <div class="difficulty-selector">
         <h3>Selecciona la dificultad:</h3>
@@ -92,7 +93,6 @@
 
     <!-- Pantalla de juego -->
     <section id="screen-game" class="screen" aria-live="polite">
-      <!-- Confetti -->
       <canvas id="confetti" class="confetti" aria-hidden="true"></canvas>
 
       <div class="topbar">
@@ -102,7 +102,6 @@
           <span>Errores: <strong id="mistakes">0</strong>/<span id="max-mistakes">6</span></span>
         </div>
 
-        <!-- Pistas -->
         <div id="hints-area" class="hints-area" aria-label="Pistas">
           <button id="btn-hint" class="icon-btn" title="Comprar pista (cuesta 15 puntos)" aria-label="Comprar pista">
             <svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true">
@@ -114,7 +113,6 @@
           <div id="hint-chips" class="hint-chips" aria-live="polite"></div>
         </div>
 
-        <!-- Puntos / Racha -->
         <div class="scorebox" aria-label="Puntaje y racha">
           <span>⭐ Puntos: <strong id="score">0</strong></span>
           <span class="sep">|</span>
@@ -141,8 +139,6 @@
         <div class="board">
           <div id="word" class="word" aria-label="Letras de la palabra"></div>
           <div id="used-letters" class="used" aria-live="polite"></div>
-
-          <!-- Teclado QWERTY generado por JS -->
           <div class="keyboard" aria-label="Teclado en pantalla"></div>
         </div>
       </div>
@@ -179,12 +175,10 @@
           <h3>🎯 Origen</h3>
           <p>El juego del ahorcado tiene sus raíces en el siglo XIX, aunque su origen exacto es incierto. Se cree que surgió como una forma de entretenimiento educativo para enseñar vocabulario y ortografía.</p>
         </div>
-        
         <div class="history-section">
           <h3>🌍 Popularidad Mundial</h3>
           <p>Conocido en inglés como "Hangman", este juego se popularizó en todo el mundo debido a su simplicidad y su capacidad para ser jugado sin necesidad de materiales especiales.</p>
         </div>
-        
         <div class="history-section">
           <h3>🎓 Valor Educativo</h3>
           <p>El juego del ahorcado es ampliamente utilizado en educación para:</p>
@@ -195,10 +189,9 @@
             <li>Fomentar el pensamiento estratégico</li>
           </ul>
         </div>
-        
         <div class="history-section">
           <h3>🎮 Versión Digital</h3>
-          <p>Esta versión moderna incluye características innovadoras como:</p>
+          <p>Esta versión moderna incluye características como:</p>
           <ul>
             <li>Sistema de puntuación con estrellas</li>
             <li>Pistas comprables con puntos</li>
@@ -212,7 +205,7 @@
       </div>
     </section>
 
-    <!-- Pantalla de Configuración -->
+    <!-- Pantalla de Configuración + Personalización (solo colores) -->
     <section id="screen-settings" class="screen" aria-labelledby="settings-title">
       <h2 id="settings-title" class="subtitle">⚙️ Configuración</h2>
       <div class="settings-content">
@@ -221,21 +214,46 @@
           <div class="theme-selector">
             <label class="theme-option">
               <input type="radio" name="theme" value="light" checked>
-              <span class="theme-card">
-                <span class="theme-icon">☀️</span>
-                <span class="theme-name">Claro</span>
-              </span>
+              <span class="theme-card"><span class="theme-icon">☀️</span><span class="theme-name">Claro</span></span>
             </label>
             <label class="theme-option">
               <input type="radio" name="theme" value="dark">
-              <span class="theme-card">
-                <span class="theme-icon">🌙</span>
-                <span class="theme-name">Oscuro</span>
-              </span>
+              <span class="theme-card"><span class="theme-icon">🌙</span><span class="theme-name">Oscuro</span></span>
             </label>
           </div>
         </div>
-        
+
+        <div class="setting-group">
+          <h3>🧩 Personalización de colores</h3>
+
+          <div class="preset-row">
+            <button class="chip" data-preset='{"primary":"#3b82f6","gradA":"#f7f9fc","gradB":"#eef3ff"}'>Azul clásico</button>
+            <button class="chip" data-preset='{"primary":"#22c55e","gradA":"#f0fdf4","gradB":"#dcfce7"}'>Verde suave</button>
+            <button class="chip" data-preset='{"primary":"#ef4444","gradA":"#fff1f2","gradB":"#ffe4e6"}'>Rojo cálido</button>
+            <button class="chip" data-preset='{"primary":"#a855f7","gradA":"#faf5ff","gradB":"#ede9fe"}'>Violeta</button>
+          </div>
+
+          <div class="grid2">
+            <label class="form-field">
+              <span>Color de acento</span>
+              <input id="accent-picker" type="color" value="#3b82f6" />
+            </label>
+            <label class="form-field">
+              <span>Degradado fondo A</span>
+              <input id="gradA-picker" type="color" value="#f7f9fc" />
+            </label>
+            <label class="form-field">
+              <span>Degradado fondo B</span>
+              <input id="gradB-picker" type="color" value="#eef3ff" />
+            </label>
+          </div>
+
+          <div class="btn-row">
+            <button id="btn-save-theme" class="btn small primary">Guardar colores</button>
+            <button id="btn-reset-theme" class="btn small">Restablecer</button>
+          </div>
+        </div>
+
         <div class="setting-group">
           <h3>🎵 Sonidos</h3>
           <label class="checkbox">
@@ -243,7 +261,7 @@
             <span>Habilitar efectos de sonido</span>
           </label>
         </div>
-        
+
         <div class="setting-group">
           <h3>📊 Estadísticas</h3>
           <div class="stats-display">

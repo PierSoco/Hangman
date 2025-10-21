@@ -1,54 +1,41 @@
 /* ========= Constantes y estado ========= */
 const MAX_MISTAKES = 6;
 const MAX_HINTS = 3;
-const HINT_COST = 15; // Costo en puntos para comprar una pista
+const HINT_COST = 15;
 
-// Configuraciones de dificultad
 const DIFFICULTY_CONFIG = {
-  easy: {
-    maxMistakes: 8,
-    minLength: 3,
-    maxLength: 5,
-    name: "Fácil"
-  },
-  medium: {
-    maxMistakes: 6,
-    minLength: 6,
-    maxLength: 8,
-    name: "Medio"
-  },
-  hard: {
-    maxMistakes: 4,
-    minLength: 9,
-    maxLength: 20,
-    name: "Difícil"
-  }
+  easy:   { maxMistakes: 8, minLength: 3, maxLength: 5,  name: "Fácil" },
+  medium: { maxMistakes: 6, minLength: 6, maxLength: 8,  name: "Medio" },
+  hard:   { maxMistakes: 4, minLength: 9, maxLength: 20, name: "Difícil" }
 };
 
-// Teclado QWERTY (sin Ñ porque normalizamos a A-Z)
 const KEYBOARD_LAYOUT = [
   ["Q","W","E","R","T","Y","U","I","O","P"],
   ["A","S","D","F","G","H","J","K","L"],
   ["Z","X","C","V","B","N","M"]
 ];
 
-// Puntuación por estrellas
-const STAR_POINTS = [10, 40, 70, 100]; // 0⭐,1⭐,2⭐,3⭐
+const STAR_POINTS = [10, 40, 70, 100];
+
 const LS_KEYS = {
   SCORE: "ahorcado_score",
-  STREAK: "ahorcado_streak"
+  STREAK: "ahorcado_streak",
+  THEME: "ahorcado_theme",
+  ACCENT: "ahorcado_accent",
+  GRAD_A: "ahorcado_grad_a",
+  GRAD_B: "ahorcado_grad_b",
+  GAMES: "ahorcado_games_played"
 };
 
-let WORDS_DB = []; // [{word:"...", hints:["...","...","..."]}]
-
-let currentDifficulty = "easy"; // Dificultad actual
+let WORDS_DB = [];
+let currentDifficulty = "easy";
 
 let gameState = {
   secret: "",
   revealed: [],
   used: new Set(),
   mistakes: 0,
-  mode: "random",   // "random" | "friends"
+  mode: "random",
   hints: [],
   usedHintsIdx: [],
   nextHintIdx: 0,
@@ -69,10 +56,6 @@ const btnRandom = document.getElementById("btn-random");
 const btnFriends = document.getElementById("btn-friends");
 const btnBackMenu = document.getElementById("btn-back-menu");
 
-// Selector de dificultad
-const difficultyInputs = document.querySelectorAll('input[name="difficulty"]');
-
-// Navegación
 const navLinks = document.querySelectorAll('.nav-link');
 const themeInputs = document.querySelectorAll('input[name="theme"]');
 const soundEnabled = document.getElementById('sound-enabled');
@@ -151,47 +134,40 @@ async function loadWordsJSON(){
 
 function getWordsByDifficulty(difficulty) {
   const config = DIFFICULTY_CONFIG[difficulty];
-  return WORDS_DB.filter(word => 
-    word.word.length >= config.minLength && 
+  return WORDS_DB.filter(word =>
+    word.word.length >= config.minLength &&
     word.word.length <= config.maxLength
   );
 }
 
 function lsGet(key, def=0){
   const v = localStorage.getItem(key);
+  if(v === null || v === undefined) return def;
   const n = Number(v);
-  return Number.isFinite(n) ? n : def;
+  return Number.isFinite(n) ? n : v;
 }
-function lsSet(key, val){
-  localStorage.setItem(key, String(val));
-}
+function lsSet(key, val){ localStorage.setItem(key, String(val)); }
 function refreshScoreUI(){
-  if(scoreEl) scoreEl.textContent = lsGet(LS_KEYS.SCORE, 0);
-  if(streakEl) streakEl.textContent = lsGet(LS_KEYS.STREAK, 0);
+  if(scoreEl) scoreEl.textContent = Number(lsGet(LS_KEYS.SCORE, 0)) || 0;
+  if(streakEl) streakEl.textContent = Number(lsGet(LS_KEYS.STREAK, 0)) || 0;
 }
 
 function showScreen(name){
   Object.values(screens).forEach(s => s.classList.remove("active","state-win","state-lose"));
   screens[name].classList.add("active");
-  
-  // Actualizar navegación activa
+
   navLinks.forEach(link => {
     link.classList.remove('active');
-    if (link.dataset.screen === name) {
-      link.classList.add('active');
-    }
+    if (link.dataset.screen === name) link.classList.add('active');
   });
-  
-  // Actualizar estadísticas si estamos en configuración
-  if (name === 'settings') {
-    updateStatsDisplay();
-  }
+
+  if (name === 'settings') updateStatsDisplay();
 }
 
 function updateStatsDisplay() {
-  if (totalPointsEl) totalPointsEl.textContent = lsGet(LS_KEYS.SCORE, 0);
-  if (currentStreakEl) currentStreakEl.textContent = lsGet(LS_KEYS.STREAK, 0);
-  if (gamesPlayedEl) gamesPlayedEl.textContent = lsGet('ahorcado_games_played', 0);
+  if (totalPointsEl) totalPointsEl.textContent = Number(lsGet(LS_KEYS.SCORE, 0)) || 0;
+  if (currentStreakEl) currentStreakEl.textContent = Number(lsGet(LS_KEYS.STREAK, 0)) || 0;
+  if (gamesPlayedEl) gamesPlayedEl.textContent = Number(lsGet(LS_KEYS.GAMES, 0)) || 0;
 }
 
 function renderKeyboard(){
@@ -215,23 +191,15 @@ function renderKeyboard(){
 
 function renderHintUI(){
   hintCountEl.textContent = `${gameState.usedHintsIdx.length}/${Math.min(MAX_HINTS, gameState.hints.length)}`;
-  
-  // Verificar si hay suficientes puntos para comprar una pista
-  const currentScore = lsGet(LS_KEYS.SCORE, 0);
+  const currentScore = Number(lsGet(LS_KEYS.SCORE, 0)) || 0;
   const hasEnoughPoints = currentScore >= HINT_COST;
-  
   const canGiveMore = gameState.mode === "random"
     && gameState.nextHintIdx < Math.min(MAX_HINTS, gameState.hints.length)
     && !gameState.over
     && hasEnoughPoints;
-
   btnHint.disabled = !canGiveMore;
   btnHint.classList.toggle("disabled", btnHint.disabled);
-  
-  // Actualizar el estilo del costo según si hay suficientes puntos
-  if (hintCostEl) {
-    hintCostEl.style.color = hasEnoughPoints ? "var(--gold)" : "var(--danger)";
-  }
+  if (hintCostEl) hintCostEl.style.color = hasEnoughPoints ? "var(--gold)" : "var(--danger)";
 
   hintChipsEl.innerHTML = "";
   gameState.usedHintsIdx.forEach((idx, i) => {
@@ -243,12 +211,10 @@ function renderHintUI(){
     chip.addEventListener("click", () => openHintModal(gameState.hints[idx]));
     hintChipsEl.appendChild(chip);
   });
-
   hintsArea.style.display = (gameState.mode === "random" && gameState.hints.length) ? "flex" : "none";
 }
 
 function renderState(){
-  // palabra
   wordEl.innerHTML = "";
   gameState.revealed.forEach(ch => {
     const span = document.createElement("span");
@@ -257,26 +223,19 @@ function renderState(){
     wordEl.appendChild(span);
   });
 
-  // usadas
-  usedEl.textContent = gameState.used.size
-    ? `Letras usadas: ${[...gameState.used].join(" ")}`
-    : "";
+  usedEl.textContent = gameState.used.size ? `Letras usadas: ${[...gameState.used].join(" ")}` : "";
 
-  // errores
   mistakesEl.textContent = String(gameState.mistakes);
   const config = DIFFICULTY_CONFIG[gameState.difficulty];
   maxMistakesEl.textContent = String(config.maxMistakes);
 
-  // partes visibles
   parts.forEach((p, idx) => p.classList.toggle("visible", idx < gameState.mistakes));
 
-  // teclas deshabilitadas
   document.querySelectorAll(".key").forEach(k => {
     const letter = k.getAttribute("data-letter");
     k.disabled = gameState.used.has(letter) || gameState.over;
   });
 
-  // pistas UI
   renderHintUI();
 }
 
@@ -284,7 +243,6 @@ function startGameWith(word, mode="random", hints=[], difficulty="easy"){
   const secret = normalizeLetters(word);
   if(!secret || secret.length < 2) throw new Error("La palabra debe tener al menos 2 letras.");
 
-  // limpiar animaciones previas
   screens.game.classList.remove("state-win","state-lose");
 
   gameState = {
@@ -305,10 +263,7 @@ function startGameWith(word, mode="random", hints=[], difficulty="easy"){
 }
 
 function hasWon(){ return gameState.revealed.join("") === gameState.secret; }
-function hasLost(){ 
-  const config = DIFFICULTY_CONFIG[gameState.difficulty];
-  return gameState.mistakes >= config.maxMistakes; 
-}
+function hasLost(){ const c = DIFFICULTY_CONFIG[gameState.difficulty]; return gameState.mistakes >= c.maxMistakes; }
 
 function handleGuess(rawLetter){
   if(gameState.over) return;
@@ -327,59 +282,36 @@ function handleGuess(rawLetter){
   }
 
   renderState();
-
-  if(hasWon()) showResult(true);
-  else if(hasLost()) showResult(false);
+  if(hasWon()) showResult(true); else if(hasLost()) showResult(false);
 }
 
 /* ========= Pistas ========= */
-function openHintModal(text){
-  hintText.textContent = text || "Sin pista disponible.";
-  hintModal.showModal();
-}
-
+function openHintModal(text){ hintText.textContent = text || "Sin pista disponible."; hintModal.showModal(); }
 function giveNextHint(){
   const maxAvail = Math.min(MAX_HINTS, gameState.hints.length);
   if(gameState.nextHintIdx >= maxAvail || gameState.over) return;
-
-  // Verificar si hay suficientes puntos
-  const currentScore = lsGet(LS_KEYS.SCORE, 0);
+  const currentScore = Number(lsGet(LS_KEYS.SCORE, 0)) || 0;
   if(currentScore < HINT_COST) {
-    // Agregar animación de shake al botón
     btnHint.classList.add("insufficient-points");
-    setTimeout(() => {
-      btnHint.classList.remove("insufficient-points");
-    }, 500);
-    
-    // Mostrar mensaje de que no hay suficientes puntos
+    setTimeout(() => btnHint.classList.remove("insufficient-points"), 500);
     hintText.textContent = `No tienes suficientes puntos para comprar una pista. Necesitas ${HINT_COST} puntos y tienes ${currentScore}.`;
     hintModal.showModal();
     return;
   }
-
   const idx = gameState.nextHintIdx;
   const text = gameState.hints[idx] || "Sin pista disponible.";
-  
-  // Restar puntos por la pista
   const newScore = currentScore - HINT_COST;
   lsSet(LS_KEYS.SCORE, newScore);
   refreshScoreUI();
-  
-  // Mostrar la pista con mensaje de costo
   const hintWithCost = `${text}\n\n💡 Gastaste ${HINT_COST} puntos por esta pista.`;
   openHintModal(hintWithCost);
-
   gameState.usedHintsIdx.push(idx);
   gameState.nextHintIdx++;
   renderHintUI();
 }
 
 /* ========= Estrellas, resultado y confetti ========= */
-function computeStars(){
-  const u = gameState.usedHintsIdx.length;
-  return Math.max(0, 3 - u);
-}
-
+function computeStars(){ const u = gameState.usedHintsIdx.length; return Math.max(0, 3 - u); }
 function renderStars(count){
   starsEl.innerHTML = "";
   for(let i=0;i<3;i++){
@@ -390,7 +322,6 @@ function renderStars(count){
       </svg>`;
     starsEl.insertAdjacentHTML("beforeend", svg);
   }
-  // aparición escalonada
   requestAnimationFrame(() => {
     [...starsEl.children].forEach((el, idx) => {
       el.style.setProperty("--delay", `${idx*80}ms`);
@@ -398,105 +329,60 @@ function renderStars(count){
     });
   });
 }
-
-function endGameLock(){
-  gameState.over = true;
-  // deshabilitar teclado
-  document.querySelectorAll(".key").forEach(k => k.disabled = true);
-  // no más pistas
-  renderHintUI();
-}
-
+function endGameLock(){ gameState.over = true; document.querySelectorAll(".key").forEach(k => k.disabled = true); renderHintUI(); }
 function addPointsAndStreak(win, stars){
-  let score = lsGet(LS_KEYS.SCORE, 0);
-  let streak = lsGet(LS_KEYS.STREAK, 0);
-  if(win){
-    score += STAR_POINTS[stars]; // estrellas 0..3
-    streak += 1;
-  }else{
-    streak = 0;
-  }
+  let score = Number(lsGet(LS_KEYS.SCORE, 0)) || 0;
+  let streak = Number(lsGet(LS_KEYS.STREAK, 0)) || 0;
+  let games = Number(lsGet(LS_KEYS.GAMES, 0)) || 0;
+  games += 1;
+  if(win){ score += STAR_POINTS[stars]; streak += 1; } else { streak = 0; }
   lsSet(LS_KEYS.SCORE, score);
   lsSet(LS_KEYS.STREAK, streak);
+  lsSet(LS_KEYS.GAMES, games);
   refreshScoreUI();
   return {scoreGain: win ? STAR_POINTS[stars] : 0, streak};
 }
-
 function showConfetti(ms=1200){
   const ctx = confettiCanvas.getContext("2d");
   const cw = confettiCanvas.width = confettiCanvas.offsetWidth;
   const ch = confettiCanvas.height = confettiCanvas.offsetHeight;
   const parts = [];
   const colors = ["#fbbf24","#22c55e","#3b82f6","#ef4444","#a855f7"];
-
-  for(let i=0;i<120;i++){
-    parts.push({
-      x: Math.random()*cw,
-      y: -20 - Math.random()*ch*0.5,
-      r: 2 + Math.random()*3,
-      c: colors[(Math.random()*colors.length)|0],
-      v: 1 + Math.random()*3,
-      a: Math.random()*Math.PI*2
-    });
-  }
+  for(let i=0;i<120;i++) parts.push({ x: Math.random()*cw, y: -20 - Math.random()*ch*0.5, r: 2 + Math.random()*3, c: colors[(Math.random()*colors.length)|0], v: 1 + Math.random()*3, a: Math.random()*Math.PI*2 });
   let start = performance.now();
   function tick(t){
-    const dt = t - start;
-    ctx.clearRect(0,0,cw,ch);
-    parts.forEach(p=>{
-      p.y += p.v;
-      p.x += Math.sin((p.y+p.a)/15);
-      ctx.fillStyle = p.c;
-      ctx.beginPath();
-      ctx.arc(p.x, p.y, p.r, 0, Math.PI*2);
-      ctx.fill();
-    });
-    if(dt < ms) requestAnimationFrame(tick);
-    else ctx.clearRect(0,0,cw,ch);
+    const dt = t - start; ctx.clearRect(0,0,cw,ch);
+    parts.forEach(p=>{ p.y += p.v; p.x += Math.sin((p.y+p.a)/15); ctx.fillStyle = p.c; ctx.beginPath(); ctx.arc(p.x, p.y, p.r, 0, Math.PI*2); ctx.fill(); });
+    if(dt < ms) requestAnimationFrame(tick); else ctx.clearRect(0,0,cw,ch);
   }
   requestAnimationFrame(tick);
 }
-
 function shareToWhatsApp(win, stars, scoreGain, streak, revealWord) {
   const config = DIFFICULTY_CONFIG[gameState.difficulty];
   const emoji = win ? "🎉" : "😵";
   const status = win ? "¡Gané!" : "Perdí";
-  
   let message = `${emoji} ${status} jugando Ahorcado!\n\n`;
   message += `📝 Palabra: ${revealWord}\n`;
   message += `🎯 Dificultad: ${config.name}\n`;
   message += `💡 Pistas usadas: ${gameState.usedHintsIdx.length}\n`;
-  
-  if (win) {
-    message += `⭐ Estrellas: ${stars}/3\n`;
-    message += `🏆 Puntos ganados: +${scoreGain}\n`;
-    message += `🔥 Racha actual: ${streak}\n`;
-  }
-  
+  if (win) { message += `⭐ Estrellas: ${stars}/3\n`; message += `🏆 Puntos ganados: +${scoreGain}\n`; message += `🔥 Racha actual: ${streak}\n`; }
   message += `\n🎮 ¡Juega también en: ${window.location.href}`;
-  
   const whatsappUrl = `https://wa.me/?text=${encodeURIComponent(message)}`;
   window.open(whatsappUrl, '_blank');
 }
-
 function showResult(win){
   endGameLock();
-
-  // trigger animación de fin
   screens.game.classList.remove("state-win","state-lose");
   screens.game.classList.add(win ? "state-win" : "state-lose");
-
   const revealWord = gameState.secret.split("").join(" ");
   const stars = win ? computeStars() : 0;
   const { scoreGain, streak } = addPointsAndStreak(win, stars);
-
   if(win){
     resultTitle.textContent = "¡Ganaste! 🎉";
     resultExtra.textContent = `Pistas usadas: ${gameState.usedHintsIdx.length}`;
     resultMsg.textContent = `Adivinaste la palabra: ${revealWord}`;
     resultPoints.innerHTML = `Sumaste <strong>+${scoreGain}</strong> puntos · Racha: <strong>${streak}</strong>`;
-    renderStars(stars);
-    showConfetti();
+    renderStars(stars); showConfetti();
   }else{
     resultTitle.textContent = "Derrota 😵";
     resultExtra.textContent = `Pistas usadas: ${gameState.usedHintsIdx.length}`;
@@ -504,29 +390,124 @@ function showResult(win){
     resultPoints.innerHTML = `Esta vez no sumaste puntos · Racha reiniciada`;
     renderStars(0);
   }
-
-  // Configurar el botón de WhatsApp
   btnShareWhatsapp.onclick = () => shareToWhatsApp(win, stars, scoreGain, streak, revealWord);
-
   modal.showModal();
 }
 
-/* ========= Navegación / eventos ========= */
+/* ========= Personalización (solo colores) ========= */
+const accentPicker = document.getElementById('accent-picker');
+const gradAPicker  = document.getElementById('gradA-picker');
+const gradBPicker  = document.getElementById('gradB-picker');
+const btnSaveTheme = document.getElementById('btn-save-theme');
+const btnResetTheme = document.getElementById('btn-reset-theme');
+const presetButtons = document.querySelectorAll('.chip[data-preset]');
+
+function hexToHsl(hex){
+  const s = hex.replace('#','');
+  const b = s.length===3 ? s.split('').map(c=>c+c).join('') : s;
+  const num = parseInt(b, 16);
+  const r = (num >> 16) & 255, g = (num >> 8) & 255, bl = num & 255;
+  const r1 = r/255, g1 = g/255, b1 = bl/255;
+  const max = Math.max(r1,g1,b1), min = Math.min(r1,g1,b1);
+  let h, s1, l = (max+min)/2;
+  if(max===min){ h = s1 = 0; }
+  else{
+    const d = max-min;
+    s1 = l>0.5 ? d/(2-max-min) : d/(max+min);
+    switch(max){
+      case r1: h = (g1-b1)/d + (g1<b1?6:0); break;
+      case g1: h = (b1-r1)/d + 2; break;
+      case b1: h = (r1-g1)/d + 4; break;
+    }
+    h/=6;
+  }
+  return {h: Math.round(h*360), s: Math.round(s1*100), l: Math.round(l*100)};
+}
+function hslToHex(h,s,l){
+  s/=100; l/=100; const k=n=> (n+ h/30)%12; const a=s*Math.min(l,1-l);
+  const f=n=> l - a*Math.max(-1, Math.min(k(n)-3, Math.min(9-k(n),1)));
+  const toHex=x=> Math.round(x*255).toString(16).padStart(2,'0');
+  return `#${toHex(f(0))}${toHex(f(8))}${toHex(f(4))}`;
+}
+function darkerHex(hex, by=12){
+  const {h,s,l} = hexToHsl(hex);
+  return hslToHex(h, s, Math.max(0, l - by));
+}
+
+function applyAccent(hex){
+  document.documentElement.style.setProperty('--primary', hex);
+  document.documentElement.style.setProperty('--primary-600', darkerHex(hex, 12));
+}
+function applyGradient(aHex, bHex){
+  document.documentElement.style.setProperty('--bg-grad-a', aHex);
+  document.documentElement.style.setProperty('--bg-grad-b', bHex);
+}
+
+function saveThemeToLS(){
+  lsSet(LS_KEYS.ACCENT, accentPicker.value);
+  lsSet(LS_KEYS.GRAD_A, gradAPicker.value);
+  lsSet(LS_KEYS.GRAD_B, gradBPicker.value);
+  applyAccent(accentPicker.value);
+  applyGradient(gradAPicker.value, gradBPicker.value);
+}
+function resetTheme(){
+  accentPicker.value = '#3b82f6';
+  gradAPicker.value = '#f7f9fc';
+  gradBPicker.value = '#eef3ff';
+  saveThemeToLS();
+}
+
+function loadCustomizationFromLS(){
+  const savedTheme = (localStorage.getItem(LS_KEYS.THEME) || 'light');
+  document.body.className = savedTheme === 'dark' ? 'dark-theme' : '';
+  const savedThemeInput = document.querySelector(`input[name="theme"][value="${savedTheme}"]`);
+  if (savedThemeInput) savedThemeInput.checked = true;
+
+  const accent = localStorage.getItem(LS_KEYS.ACCENT) || '#3b82f6';
+  const gradA  = localStorage.getItem(LS_KEYS.GRAD_A) || '#f7f9fc';
+  const gradB  = localStorage.getItem(LS_KEYS.GRAD_B) || '#eef3ff';
+  accentPicker.value = accent; gradAPicker.value = gradA; gradBPicker.value = gradB;
+  applyAccent(accent); applyGradient(gradA, gradB);
+}
+
+presetButtons.forEach(btn => {
+  btn.addEventListener('click', () => {
+    try{
+      const preset = JSON.parse(btn.dataset.preset);
+      accentPicker.value = preset.primary; gradAPicker.value = preset.gradA; gradBPicker.value = preset.gradB;
+      saveThemeToLS();
+    }catch(e){ console.warn('Preset inválido', e); }
+  });
+});
+btnSaveTheme?.addEventListener('click', () => { saveThemeToLS(); alert('🎨 Colores guardados'); });
+btnResetTheme?.addEventListener('click', () => { resetTheme(); alert('Se restablecieron los colores.'); });
+
+themeInputs.forEach(input => {
+  input.addEventListener('change', (e) => {
+    const theme = e.target.value;
+    document.body.className = theme === 'dark' ? 'dark-theme' : '';
+    lsSet(LS_KEYS.THEME, theme);
+  });
+});
+
+/* ========= Inicialización ========= */
+const initialScore = Number(lsGet(LS_KEYS.SCORE, 0)) || 0;
+if (initialScore === 0) { lsSet(LS_KEYS.SCORE, 50); }
+
+loadCustomizationFromLS();
+refreshScoreUI();
+renderKeyboard();
+
+/* ========= Juego: eventos ========= */
 btnRandom.addEventListener("click", async () => {
   await loadWordsJSON();
-  
-  // Obtener la dificultad seleccionada
   const selectedDifficulty = document.querySelector('input[name="difficulty"]:checked').value;
   currentDifficulty = selectedDifficulty;
-  
-  // Filtrar palabras por dificultad
   const wordsForDifficulty = getWordsByDifficulty(selectedDifficulty);
-  
   if (wordsForDifficulty.length === 0) {
     alert(`No hay palabras disponibles para la dificultad ${DIFFICULTY_CONFIG[selectedDifficulty].name}.`);
     return;
   }
-  
   const pick = wordsForDifficulty[Math.floor(Math.random() * wordsForDifficulty.length)];
   startGameWith(pick.word, "random", pick.hints, selectedDifficulty);
 });
@@ -546,22 +527,14 @@ btnBackMenu.addEventListener("click", () => {
 });
 btnSetupBack.addEventListener("click", () => showScreen("menu"));
 
-toggleVisibility.addEventListener("change", () => {
-  inputSecret.type = toggleVisibility.checked ? "text" : "password";
-});
+toggleVisibility.addEventListener("change", () => { inputSecret.type = toggleVisibility.checked ? "text" : "password"; });
 
 setupForm.addEventListener("submit", (e) => {
   e.preventDefault();
   const raw = inputSecret.value.trim();
   const normalized = normalizeLetters(raw);
-  if(!normalized){
-    setupError.textContent = "Ingresá solo letras (sin tildes, números ni símbolos).";
-    return;
-  }
-  if(normalized.length < 2){
-    setupError.textContent = "La palabra debe tener al menos 2 letras.";
-    return;
-  }
+  if(!normalized){ setupError.textContent = "Ingresá solo letras (sin tildes, números ni símbolos)."; return; }
+  if(normalized.length < 2){ setupError.textContent = "La palabra debe tener al menos 2 letras."; return; }
   startGameWith(normalized, "friends", []);
 });
 
@@ -572,56 +545,29 @@ btnPlayAgain.addEventListener("click", async () => {
   modal.close();
   if(gameState.mode === "random"){
     await loadWordsJSON();
-    const pick = WORDS_DB[Math.floor(Math.random()*WORDS_DB.length)];
-    startGameWith(pick.word, "random", pick.hints);
+    const pool = getWordsByDifficulty(currentDifficulty);
+    const pick = pool[Math.floor(Math.random()*pool.length)] || WORDS_DB[Math.floor(Math.random()*WORDS_DB.length)];
+    startGameWith(pick.word, "random", pick.hints, currentDifficulty);
   }else{
     showScreen("setup");
   }
 });
 btnGoMenu.addEventListener("click", () => { modal.close(); showScreen("menu"); });
 
-// Teclado físico (permanece igual)
 window.addEventListener("keydown", (e) => {
   if(modal.open || hintModal.open) return;
   const tag = (document.activeElement && document.activeElement.tagName) || "";
   if(tag === "INPUT" || tag === "TEXTAREA") return;
-
   const key = e.key || "";
   const normalized = normalizeLetters(key);
   if(normalized.length === 1) handleGuess(normalized);
 });
 
-/* Inicialización */
-// Dar puntos iniciales a jugadores nuevos para que puedan probar las pistas
-const initialScore = lsGet(LS_KEYS.SCORE, 0);
-if (initialScore === 0) {
-  lsSet(LS_KEYS.SCORE, 50); // 50 puntos iniciales (suficiente para 3 pistas)
-}
-
-// Event listeners para navegación
-navLinks.forEach(link => {
-  link.addEventListener('click', () => {
-    const screenName = link.dataset.screen;
-    if (screenName && screens[screenName]) {
-      showScreen(screenName);
-    }
-  });
+// Delegación global: abre secciones para cualquier elemento con data-screen
+document.addEventListener('click', (e) => {
+  const target = e.target.closest('[data-screen]');
+  if (!target) return;
+  e.preventDefault();
+  const screen = target.getAttribute('data-screen');
+  if (screen) showScreen(screen);
 });
-
-// Event listeners para configuración de tema
-themeInputs.forEach(input => {
-  input.addEventListener('change', (e) => {
-    const theme = e.target.value;
-    document.body.className = theme === 'dark' ? 'dark-theme' : '';
-    lsSet('ahorcado_theme', theme);
-  });
-});
-
-// Cargar tema guardado
-const savedTheme = localStorage.getItem('ahorcado_theme') || 'light';
-document.body.className = savedTheme === 'dark' ? 'dark-theme' : '';
-const savedThemeInput = document.querySelector(`input[name="theme"][value="${savedTheme}"]`);
-if (savedThemeInput) savedThemeInput.checked = true;
-
-refreshScoreUI();
-renderKeyboard();
